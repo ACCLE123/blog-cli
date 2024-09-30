@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -18,7 +19,7 @@ import (
 var (
 	host       string
 	port       int
-	configFile = "blog-cli.yaml"
+	configFile string
 )
 
 type Config struct {
@@ -66,15 +67,21 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		log.Fatalf("Error getting home directory: %v", err)
+	}
+
+	configFile = filepath.Join(homeDir, "blog-cli.yaml")
 	config, err := LoadConfig(configFile)
+	if err != nil {
+		log.Fatalf("Error loading config: %v", err)
+	}
 
 	var setCmd = &cobra.Command{
 		Use:   "set",
 		Short: "Set the server and port",
 		Run: func(cmd *cobra.Command, args []string) {
-			if err != nil {
-				log.Fatalf("Error loading config: %v", err)
-			}
 			config.Host = host
 			config.Port = port
 			err = SaveConfig(configFile, config)
