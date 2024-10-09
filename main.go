@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -20,6 +19,8 @@ var (
 	host       string
 	port       int
 	configFile string
+	id         int
+	title      string
 )
 
 type Config struct {
@@ -28,6 +29,7 @@ type Config struct {
 }
 
 type Blog struct {
+	Id        int    `json:"Id"`
 	Title     string `json:"Title"`
 	Content   string `json:"Content"`
 	Category  string `json:"Category"`
@@ -153,12 +155,13 @@ func init() {
 			fmt.Printf("Adding blog post from file: %s\n", fileName)
 
 			blog := Blog{
-				Title:     strings.TrimSuffix(fileName, ".md"),
+				Id:        id,
+				Title:     title,
 				Content:   string(content),
 				Category:  "",
 				Tags:      "",
 				ViewCount: 0,
-				Author:    "yangqi",
+				Author:    "",
 			}
 
 			jsonData, err := json.Marshal(blog)
@@ -167,7 +170,7 @@ func init() {
 				return
 			}
 
-			url := fmt.Sprintf("http://%s:%d/blogs", config.Host, config.Port)
+			url := fmt.Sprintf("http://%s:%d/blogs/updateOrAdd", config.Host, config.Port)
 
 			resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonData))
 			if err != nil {
@@ -185,6 +188,10 @@ func init() {
 			fmt.Printf("Response from server: %s\n", string(body))
 		},
 	}
+
+	addCmd.Flags().IntVarP(&id, "id", "i", 0, "blog id")
+	addCmd.Flags().StringVarP(&title, "title", "t", "", "blog title")
+
 	rootCmd.AddCommand(addCmd)
 }
 
