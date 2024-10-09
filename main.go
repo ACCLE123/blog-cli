@@ -193,6 +193,42 @@ func init() {
 	addCmd.Flags().StringVarP(&title, "title", "t", "", "blog title")
 
 	rootCmd.AddCommand(addCmd)
+
+	var deleteCmd = &cobra.Command{
+		Use:   "del [blog_id]",
+		Short: "Delete a blog post by its ID",
+		Args:  cobra.ExactArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			blogID := args[0]
+			url := fmt.Sprintf("http://%s:%d/blogs/%s", config.Host, config.Port, blogID)
+
+			client := &http.Client{
+				Timeout: 5 * time.Second,
+			}
+
+			req, err := http.NewRequest(http.MethodDelete, url, nil)
+			if err != nil {
+				fmt.Printf("Failed to create DELETE request: %s\n", err)
+				return
+			}
+
+			resp, err := client.Do(req)
+			if err != nil {
+				fmt.Printf("Failed to send DELETE request: %s\n", err)
+				return
+			}
+			defer resp.Body.Close()
+
+			if resp.StatusCode == http.StatusOK {
+				fmt.Printf("Blog with ID %s deleted successfully\n", blogID)
+			} else {
+				body, _ := io.ReadAll(resp.Body)
+				fmt.Printf("Failed to delete blog. Status code: %d, Response: %s\n", resp.StatusCode, string(body))
+			}
+		},
+	}
+
+	rootCmd.AddCommand(deleteCmd)
 }
 
 func main() {
